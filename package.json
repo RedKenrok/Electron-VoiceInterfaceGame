@@ -1,19 +1,19 @@
 {
-  "name": "voice-interface-boilerplate",
-  "productName": "Voice Interface Boilerplate",
+  "name": "voice-interface-game",
+  "productName": "Voice Interface Game",
   "version": "0.0.0",
-  "description": "A voice interface boilerplate",
+  "description": "A voice interface game",
   "keywords": [
     "voice",
     "interface",
-    "boilerplate"
+    "game"
   ],
   "author": "",
-  "repository": "https://www.github.com/RedKenrok/electron-voiceinterfaceboilerplate",
+  "repository": "https://www.github.com/RedKenrok/electron-voiceinterfacegame",
   "main": "app/main.js",
   "scripts": {
     "start": "electron .",
-    "package": "electron-packager ./ Electron-VoiceInterfaceBoilerplate --out dist --version 1.7.5 --overwrite",
+    "package": "electron-packager ./ Electron-VoiceInterfaceGame --out dist --version 1.7.5 --overwrite",
     "postinstall": "npmpd && electron-rebuild",
     "rebuild": "electron-rebuild"
   },
@@ -22,6 +22,7 @@
     "@google-cloud/speech": "^1.0.0",
     "electron-window-state": "^4.1.1",
     "googlesynthesis": "^0.0.1",
+    "inkjs": "^1.6.0",
     "node-audiorecorder": "^1.1.1",
     "witspeech": "^0.0.1"
   },

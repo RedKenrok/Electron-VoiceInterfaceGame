@@ -1,14 +1,15 @@
-# Electron-VoiceInterfaceBoilerplate
+# Electron-VoiceInterfaceGame
+A fork from [Electron-VoiceInterfaceBoilerplate](https://github.com/RedKenrok/Electron-VoiceInterfaceBoilerplate), this project is a continuation of the boilerplate but aimed to build a narrative framework for making games using voice controls.
 
 ## Installation
 Download a compressed copy of the project, or run the following command and open up the folder if you have [Git](https://git-scm.com) installed.
 ```
-git clone https://github.com/RedKenrok/Electron-VoiceInterfaceBoilerplate.git && cd Electron-VoiceInterfaceBoilerplate
+git clone https://github.com/RedKenrok/Electron-VoiceInterfaceGame.git && cd Electron-VoiceInterfaceGame
 ```
 
 Make sure [Node.js](htpps://nodejs.org) is installed, this installation will also include [Npm.js](htpps://npmjs.org). Run the following command install the project dependencies.
 ```
-npm install -save
+npm install --save
 ```
 
 ### Audio recording
@@ -22,17 +23,6 @@ Get the key file from the [Google Cloud Platform](https://console.cloud.google.c
 
 > For more information see step 1 through 3 of the quickstart guide of the [Speech API](https://github.com/googleapis/nodejs-speech/#quickstart) and [Language API](https://github.com/googleapis/nodejs-language/#quickstart).
 
-#### Wit.ai
-Get the Access tokens from the [Wit.ai](https://wit.ai) site and add them to a file named 'wit-ai.json' in the 'app/keys/' directory.
-
-```JSON
-{
-  "app_id": "App ID",
-  "server": "Server Access Token",
-  "client": "Client Access Token"
-}
-```
-
 ### Hotword detection
 If you want to use [snowboy](https://snowboy.kitt.ai)'s hotword detection and are running MacOS or a compatible Linux distro then add a file named 'configuration.json' to the 'app/data/snowboy/' directory and add the following information.
 
@@ -41,8 +31,7 @@ If you want to use [snowboy](https://snowboy.kitt.ai)'s hotword detection and ar
   "detector": {
     "resource": "./node_modules/snowboy/resources/common.res"
   },
-  "models": [
-    {
+  "models": [{
       "file": "./node_modules/snowboy/resources/snowboy.umdl",
       "hotwords": "snowboy"
     }
@@ -67,4 +56,4 @@ If you are on windows and have errors during the post install phase when rebuild
 4. Restart the device for the environmental path to take effect.
 5. Remove the node_modules directory of the project.
 6. Reinstall the dependencies.
-> npm i -save
+> npm i --save
