@@ -24,7 +24,7 @@ Get the key file from the [Google Cloud Platform](https://console.cloud.google.c
 > For more information see step 1 through 3 of the quickstart guide of the [Speech API](https://github.com/googleapis/nodejs-speech/#quickstart) and [Language API](https://github.com/googleapis/nodejs-language/#quickstart).
 
 ### Hotword detection
-If you want to use [snowboy](https://snowboy.kitt.ai)'s hotword detection and are running MacOS or a compatible Linux distro then add a file named 'configuration.json' to the 'app/data/snowboy/' directory and add the following information.
+If you want to use [snowboy](https://snowboy.kitt.ai)'s hotword detection and are running MacOS or a compatible Linux distro then add a file named 'hotworddetector.json' to the 'app/data/' directory and add the following information.
 
 ```JSON
 {
