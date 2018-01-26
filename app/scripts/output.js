@@ -4,9 +4,6 @@ const output = {};
 	
 	'use strict';
 	
-	// Get associated html element.
-	output.element = document.getElementById('output');
-	
 	// Google Synthesis module.
 	const GoogleSynthesis = require('googlesynthesis');
 	const googleSynthesis = new GoogleSynthesis(true);
