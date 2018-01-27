@@ -29,6 +29,21 @@ const helper = {};
 		return maxIndeces;
 	}
 	
+	helper.max = function(array) {
+		if (array.length === 0) {
+			return null;
+		}
+		
+		let max = array[0];
+		for (let i = 1; i < array.length; i++) {
+			if (array[i] > max) {
+				max = array[i];
+			}
+		}
+		
+		return max;
+	}
+	
 	helper.randomInt = function(max) {
 		return Math.floor(Math.random() * Math.floor(max));
 	}

@@ -74,12 +74,18 @@ const input = {};
 		
 		// Record function.
 		input.record = function(buffer, hotword) {
+			// Setup timouts before event handler.
+			let timemoutSilence,
+				timeoutMax;
+			
 			// Start web stream.
 			let stream = speech.streamingRecognize(speechRequest)
 				.on('error', console.error)
 				.once('data', function(data) {
 					// Explicitly stop audio recorder.
 					audioRecorder.stop();
+					clearTimeout(timemoutSilence);
+					clearTimeout(timeoutMax);
 					const detail = {
 						hotword: hotword
 					}
@@ -93,7 +99,7 @@ const input = {};
 			audioRecorder.start().stream().pipe(stream);
 			
 			// Automaticly stop after recording when no data has bee received after the given interval.
-			let timemout = setTimeout(function() {
+			timemoutSilence = setTimeout(function() {
 				// Remove listeners to stream.
 				stream.removeAllListeners();
 				// Stop audio recorder.
@@ -106,8 +112,20 @@ const input = {};
 				}));
 			}, 5e3); // Five seconds.
 			audioRecorder.stream().once('data', function(data) {
-				clearTimeout(timemout);
+				clearTimeout(timemoutSilence);
 			});
+			timeoutMax = setTimeout(function() {
+				// Remove listeners to stream.
+				stream.removeAllListeners();
+				// Stop audio recorder.
+				audioRecorder.stop();
+				// Send event without transcript.
+				input.element.dispatchEvent(new CustomEvent('recognized', {
+					detail: {
+						hotword: hotword
+					}
+				}));
+			}, 60e3);
 		};
 	}
 	// If no service configured display a warning message.

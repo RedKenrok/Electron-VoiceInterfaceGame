@@ -201,32 +201,60 @@ const stories = {};
 		let choices = convertChoices(story.currentChoices);
 		console.log(choices);
 		
-		let similarity = [];
+		let similarityChoice = [];
 		for (let i = 0, choice; i < choices.length; i++) {
 			choice = choices[i];
-			console.log('choice', choice);
 			// If hotword is not the same skip.
 			if (choice.char !== hotword) {
-				similarity.push(0);
+				similarityChoice.push(-1);
 				continue;
 			}
 			
-			let ratings = stringSimilarity.findBestMatch(transcript, choice.options);
-			console.log('ratings: ', ratings);
-			similarity.push(ratings.bestMatch.rating);
+			if (false) {
+				let similarityOption = [];
+				// For each option of a choice.
+				for (let j = 0, option, similarity, delta; j < choice.options.length; j++) {
+					option = choice.options[j];
+					// Calculate similarity of the option.
+					similarity = stringSimilarity.compareTwoStrings(transcript, option);
+					if (similarity === 1 || similarity === 0) {
+						similarityOption.push(similarity);
+						continue;
+					}
+					// If they are the same length no compensastion is required.
+					delta = Math.abs(transcript.length - option.length);
+					if (delta === 0) {
+						similarityOption.push(similarity);
+						continue;
+					}
+					
+					let alpha = delta / transcript.length;
+					let beta = 1 / alpha;
+					let similarityComp = beta * similarity;
+					similarityOption.push(similarityComp);
+				}
+				console.log('similarityOption:', similarityOption);
+				// Push best rated option to choices.
+				similarityChoice.push(helper.max(similarityOption));
+			}
+			else {
+				similarityChoice.push(stringSimilarity.findBestMatch(transcript, choice.options).bestMatch.rating);
+			}
 		}
+		console.log('similarityChoice:', similarityChoice);
+		
 		// If no value is greater than zero, no matching hotword is found.
-		if (Math.max(similarity) === 0) {
+		if (Math.max(similarityChoice) === -1) {
 			choiceFail(hotword, 'addressing');
 			return;
 		}
+		
 		// Get indeces of the highest value.
-		let selected = helper.indecesOfMax(similarity);
+		let selected = helper.indecesOfMax(similarityChoice);
 		// If multiple options each as likely.
-		// Or if option is less than the threshold.
-		if (selected.length > 1 || similarity[selected[0]] < 0.1) {
-			console.log('selected:', selected, 'similarity: ', similarity);
-			choiceFail(hotword, 'selection');
+		// Or if options are less than the threshold.
+		if (selected.length > 1 || similarityChoice[selected[0]] < 0.2) {
+			choiceFail(hotword, 'threshold');
 			return;
 		}
 		
@@ -246,6 +274,9 @@ const stories = {};
 	};
 	
 	let choiceFail = function(hotword, type) {
+		// Warn about the failure.
+		console.warn('Choice failed.', 'hotword: ' + hotword, 'type: ' + type);
+		
 		let onSpeakEnded = function(event) {
 			// Remove self after done.
 			output.element.removeEventListener('ended_speak', onSpeakEnded);
