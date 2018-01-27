@@ -4,15 +4,18 @@ const output = {};
 	
 	'use strict';
 	
+	// Get associated html element.
+	output.element = document.getElementById('output');
+	
 	// Google Synthesis module.
 	const GoogleSynthesis = require('googlesynthesis');
 	const googleSynthesis = new GoogleSynthesis(true);
 	
-	// Audio player.
-	const audio = new Audio();
-	
 	output.speak = function(transcript, language, voice, speed, pitch, volume) {
 		let urls = googleSynthesis.request(transcript, language, voice, speed, pitch, volume);
+		
+		// Audio player.
+		let audio = new Audio();
 		
 		// Setup listener so it cycles through playing each url.
 		let index = 0;
@@ -20,7 +23,11 @@ const output = {};
 			index++;
 			
 			if (index >= urls.length) {
-				audio.removeEventListener('event', this);
+				audio.removeEventListener('ended', this);
+				// Send ended event.
+				output.element.dispatchEvent(
+					new CustomEvent('ended_speak')
+					);
 				return;
 			}
 			
@@ -30,6 +37,19 @@ const output = {};
 		
 		// Set first source.
 		audio.src = urls[index];
+		audio.play();
+	}
+	
+	output.effect = function(source, loop = false) {
+		// Audio player.
+		let audio = new Audio();
+		if (loop == true) {
+			audio.loop = true;
+		}
+		
+		// Todo: be able to stop loops! when speak event stops.
+		
+		audio.src = source;
 		audio.play();
 	}
 }());

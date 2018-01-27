@@ -7,17 +7,12 @@ const input = {};
 	// Get associated html element.
 	input.element = document.getElementById('input');
 	
-	// Kitt.ai Snowboy client wrapper for hot word detection.
-	// Only available for MacOS(darwin) and Linux.
-	if ([ 'darwin', 'linux' ].indexOf(os.platform()) > -1) {
-		let hotwordConfigurationPath = './app/data/hotworddetector.json';
-		const HotwordDetector = require('node-hotworddetector');
-		let hotwordDetector;
-		
-		// Check if file exists.
-		if (fs.existsSync(hotwordConfigurationPath)) {
-			// Parse file to JSON.
-			let hotwordConfiguration = JSON.parse(fs.readFileSync(hotwordConfigurationPath, 'utf8'));
+	input.initialize = function(characters, hotwordConfiguration) {
+		// Kitt.ai Snowboy client wrapper for hot word detection.
+		// Only available for MacOS(darwin) and Linux.
+		if ((hotwordConfiguration != undefined || hotwordConfiguration != null) && [ 'darwin', 'linux' ].indexOf(os.platform()) > -1) {
+			const HotwordDetector = require('node-hotworddetector');
+			let hotwordDetector;
 			// Initialize hotword detector.
 			hotwordDetector = new HotwordDetector(hotwordConfiguration.detector, hotwordConfiguration.models, hotwordConfiguration.recorder);
 			
@@ -32,24 +27,21 @@ const input = {};
 						}})
 					);
 			});
-		}
-		else {
-			console.warn('Unable to locate configuration.json for snowboy hotword detection.');
-		}
-		
-		// Control hot word detection.
-		input.detect = function(enabled) {
-			// If the detection needs to be disabled.
-			if (enabled != null && enabled === false) {
-				hotwordDetector.stop();
-				return;
-			}
 			
-			// Enables detection otherwise.
-			if (!hotwordDetector) {
-				console.error('hotword detector no initialized yet.');
+			// Control hot word detection.
+			input.detect = function(enabled) {
+				// If the detection needs to be disabled.
+				if (enabled != null && enabled === false) {
+					hotwordDetector.stop();
+					return;
+				}
+				
+				// Enables detection otherwise.
+				if (!hotwordDetector) {
+					console.error('hotword detector no initialized yet.');
+				}
+				hotwordDetector.start();
 			}
-			hotwordDetector.start();
 		}
 	}
 	
@@ -86,7 +78,7 @@ const input = {};
 		}
 		
 		// Record function.
-		input.record = function(buffer) {
+		input.record = function(buffer, hotword) {
 			// Start web stream.
 			let stream = speech.streamingRecognize(speechRequest)
 				.on('error', console.error)
@@ -95,6 +87,7 @@ const input = {};
 					input.element.dispatchEvent(
 						new CustomEvent('received', {
 							detail : {
+								hotword: hotword,
 								response: data.results[0].alternatives[0].transcript
 							}})
 						);

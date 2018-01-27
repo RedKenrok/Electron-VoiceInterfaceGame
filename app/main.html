@@ -9,50 +9,64 @@
 		<link rel="stylesheet" href="styles/custom.css">
 	</head>
 	<body>
-		<!-- Messenger -->
-		<div id="messenger">
+		<!-- Stories -->
+		<ul id="stories">
 			
-		</div>
+		</ul>
+		<!-- Messenger -->
+		<ul id="messenger" style="display: none">
+			
+		</ul>
 		<!-- Input -->
-		<div id="input">
-			<button>Invoke input.record</button>
+		<ul id="input" style="display: none">
+			
+		</ul>
+		<!-- Output -->
+		<div id="output">
+			
 		</div>
 		<!-- Additional scipts -->
 		<script type="text/javascript" src="scripts/imports.js"></script>
+		<script type="text/javascript" src="scripts/helper.js"></script>
+		<script type="text/javascript" src="scripts/stories.js"></script>
 		<script type="text/javascript" src="scripts/input.js"></script>
 		<script type="text/javascript" src="scripts/output.js"></script>
 		<script>
 			// When the window has been loaded.
 			document.addEventListener("DOMContentLoaded", function() {
-				// If platform is MacOS or Linux.
-				if ([ 'darwin', 'linux' ].indexOf(os.platform()) > -1) {
-					// Log on hot word detection.
-					input.element.addEventListener('hotword', function(event) {
-						input.detect(false);
-						output.speak('Yes');
-						input.record(event.detail.buffer);
-					});
-					// Reactivate hot word detection.
-					input.element.addEventListener('received', function(event) {
-						input.detect();
-					});
-					
-					// Start detection.
-					input.detect();
-				}
-				
-				// Start recording on input button clicked.
-				input.element.querySelector('button').addEventListener('click', function(event) {
-					if (['darwin', 'linux'].indexOf(os.platform()) > -1) {
-						// Disable detection.
-						input.detect(false);
+				// Listen for the selection of a story
+				stories.element.addEventListener('selected', function(event) {
+					let story = event.detail;
+					// If platform is MacOS or Linux.
+					if ([ 'darwin', 'linux' ].indexOf(os.platform()) > -1) {
+						//input.initialize(story);
 					}
-					input.record();
 				});
-				// Listen for a response.
-				input.element.addEventListener('received', function(event) {
-					console.log('API Response: ' + JSON.stringify(event.detail.response));
-				});
+				// Add stories array.
+				stories.add(path.resolve(__dirname, 'data/stories'));
+				
+				
+				let startStory = function(story) {
+					// If platform is MacOS or Linux.
+					if ([ 'darwin', 'linux' ].indexOf(os.platform()) > -1) {
+						// Log on hot word detection.
+						input.element.addEventListener('hotword', function(event) {
+							input.detect(false);
+							input.record(event.detail.buffer, event.detail.hotword);
+						});
+						// Reactivate hot word detection.
+						input.element.addEventListener('received', function(event) {
+							input.detect();
+						});
+						
+						// Start detection.
+						input.detect();
+					}
+					// Listen for a response.
+					input.element.addEventListener('received', function(event) {
+						console.log('API Response: ' + JSON.stringify(event.detail.response));
+					});
+				}
 			});
 		</script>
 	</body>
