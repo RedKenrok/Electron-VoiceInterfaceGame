@@ -14,7 +14,7 @@ const input = {};
 			const HotwordDetector = require('node-hotworddetector');
 			let hotwordDetector;
 			// Initialize hotword detector.
-			hotwordDetector = new HotwordDetector(hotwordConfiguration.detector, hotwordConfiguration.models, hotwordConfiguration.recorder);
+			hotwordDetector = new HotwordDetector(hotwordConfiguration.detector, hotwordConfiguration.models, hotwordConfiguration.recorder, console);
 			
 			// On hotword detection invoke the event.
 			hotwordDetector.on('hotword', function(index, hotword, buffer) {
@@ -35,11 +35,7 @@ const input = {};
 					hotwordDetector.stop();
 					return;
 				}
-				
-				// Enables detection otherwise.
-				if (!hotwordDetector) {
-					console.error('hotword detector no initialized yet.');
-				}
+				// Otherwise start detecting.
 				hotwordDetector.start();
 			}
 		}

@@ -44,29 +44,6 @@
 				});
 				// Add stories array.
 				stories.add(path.resolve(__dirname, 'data/stories'));
-				
-				
-				let startStory = function(story) {
-					// If platform is MacOS or Linux.
-					if ([ 'darwin', 'linux' ].indexOf(os.platform()) > -1) {
-						// Log on hot word detection.
-						input.element.addEventListener('hotword', function(event) {
-							input.detect(false);
-							input.record(event.detail.buffer, event.detail.hotword);
-						});
-						// Reactivate hot word detection.
-						input.element.addEventListener('received', function(event) {
-							input.detect();
-						});
-						
-						// Start detection.
-						input.detect();
-					}
-					// Listen for a response.
-					input.element.addEventListener('received', function(event) {
-						console.log('API Response: ' + JSON.stringify(event.detail.response));
-					});
-				}
 			});
 		</script>
 	</body>

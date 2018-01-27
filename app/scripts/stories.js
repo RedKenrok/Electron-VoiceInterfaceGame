@@ -102,11 +102,24 @@ const stories = {};
 		if (story.currentChoices.length > 0) {
 			// Disect choices.
 			let choices = convertChoices(story.currentChoices);
-			console.log(choices);
 			
+			// If darwin or linux enable hotword detection.
 			if ([ 'darwin', 'linux' ].indexOf(os.platform()) > -1) {
 				// Enable hotword detection.
-				input.detect(true);
+				input.detect();
+				input.element.addEventListener('hotword', function(event) {
+					let hotword = event.detail.hotword;
+					let feedbackOptions = characters[hotword].confirmation;
+					output.speak(
+						feedbackOptions[helper.randomInt(feedbackOptions.length)],
+						characters[hotword].language,
+						null,
+						characters[hotword].pitch,
+						characters[hotword].speed,
+						characters[hotword].volume,
+						);
+					input.record(event.detail.buffer, hotword);
+				});
 			}
 			
 			// Listen for input recieved.
@@ -196,7 +209,7 @@ const stories = {};
 			// Remove self after done.
 			output.element.removeEventListener('ended_speak', onSpeakEnded);
 			// Re-enable detection.
-			input.detect(true);
+			input.detect();
 		}
 		output.element.addEventListener('ended_speak', onSpeakEnded);
 		
