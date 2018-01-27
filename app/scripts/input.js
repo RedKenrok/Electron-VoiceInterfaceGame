@@ -14,7 +14,7 @@ const input = {};
 			const HotwordDetector = require('node-hotworddetector');
 			let hotwordDetector;
 			// Initialize hotword detector.
-			hotwordDetector = new HotwordDetector(hotwordConfiguration.detector, hotwordConfiguration.models, hotwordConfiguration.recorder, console);
+			hotwordDetector = new HotwordDetector(hotwordConfiguration.detector, hotwordConfiguration.models, hotwordConfiguration.recorder);
 			
 			// On hotword detection invoke the event.
 			hotwordDetector.on('hotword', function(index, hotword, buffer) {
@@ -45,16 +45,15 @@ const input = {};
 	const AudioRecorder = require('node-audiorecorder');
 	let audioRecorder = new AudioRecorder({
 		program: [ 'win32' ].indexOf(os.platform()) > -1 ? 'sox' : 'rec', // Use sox on windows else use rec.
-		silence: 2,
-		threshold: 0.35
+		silence: 1.5,
+		threshold: 0.25
 	});
 	audioRecorder.on('close', function(exitCode) {
 		audioRecorder.stop();
 	});
 	
 	// Key paths
-	const KEYPATH_GOOGLECLOUD = './app/keys/google-cloud.json',
-		  KEYPATH_WITAI = './app/keys/wit-ai.json';
+	const KEYPATH_GOOGLECLOUD = './app/keys/google-cloud.json';
 	
 	// Google Cloud Platform
 	if (fs.existsSync(KEYPATH_GOOGLECLOUD)) {
@@ -79,12 +78,14 @@ const input = {};
 			let stream = speech.streamingRecognize(speechRequest)
 				.on('error', console.error)
 				.on('data', function(data) {
-					// Invoke received event.
+					// Explicitly stop audio recorder.
+					audioRecorder.stop();
+					// Invoke recognized event.
 					input.element.dispatchEvent(
-						new CustomEvent('received', {
+						new CustomEvent('recognized', {
 							detail : {
 								hotword: hotword,
-								response: data.results[0].alternatives[0].transcript
+								transcript: data.results[0].alternatives[0].transcript
 							}})
 						);
 				});

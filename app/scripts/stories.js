@@ -28,6 +28,10 @@ const stories = {};
 				stories.element.style.display = 'none';
 				// Load characters.
 				characters = JSON.parse(fs.readFileSync(path.resolve(source, option, 'characters.json'), 'UTF-8'));
+				// Apply player effects.
+				if (characters.player.effect) {
+					output.effect(path.resolve(source, option, characters.player.effect), true);
+				}
 				// Initialize option triggers.
 				if (fs.existsSync(path.resolve(source, option, 'hotworddetector.json'))) {
 					let hotwordConfiguration = JSON.parse(fs.readFileSync(path.resolve(source, option, 'hotworddetector.json'), 'UTF-8'));
@@ -71,6 +75,8 @@ const stories = {};
 		if (story.canContinue) {
 			let transcript = story.Continue();
 			let tags = convertTags(story.currentTags);
+			console.log(transcript);
+			console.log(tags);
 			
 			let onSpeakEnded = function(event) {
 				// Remove self after done.
@@ -100,74 +106,27 @@ const stories = {};
 		
 		// Expects user input.
 		if (story.currentChoices.length > 0) {
-			// Disect choices.
-			let choices = convertChoices(story.currentChoices);
-			
-			// If darwin or linux enable hotword detection.
-			if ([ 'darwin', 'linux' ].indexOf(os.platform()) > -1) {
-				// Enable hotword detection.
-				input.detect();
-				input.element.addEventListener('hotword', function(event) {
-					let hotword = event.detail.hotword;
-					let feedbackOptions = characters[hotword].confirmation;
-					output.speak(
-						feedbackOptions[helper.randomInt(feedbackOptions.length)],
-						characters[hotword].language,
-						null,
-						characters[hotword].pitch,
-						characters[hotword].speed,
-						characters[hotword].volume,
-						);
-					input.record(event.detail.buffer, hotword);
-				});
-			}
+			detect();
 			
 			// Listen for input recieved.
-			input.element.addEventListener('received', function(event) {
-				let hotword = event.detail.hotword,
-					transcript = event.detail.response;
-				
-				let similarity = [];
-				for (let i = 0, choice; i < choices.length; i++) {
-					choice = choices[i];
-					// If hotword is not the same skip.
-					if (choice.char !== hotword) {
-						similarity.push(0);
-						continue;
-					}
-					
-					let ratings = stringSimilarity.findBestMatch(transcript, choice.options);
-					similarity.push(ratings.bestMatch.rating);
-				}
-				// If no value is greater than zero, no matching hotword is found.
-				if (Math.max(similarity) === 0) {
-					choiceFail(hotword, 'addressing');
-					return;
-				}
-				// Get indeces of the highest value.
-				let selected = helper.indecesOfMax(similarity);
-				// If multiple options each as likely.
-				// Or if option is less than the threshold.
-				if (selected.length > 1 || similarity[selected[0]] < 0.1) {
-					choiceFail(hotword, 'selection');
-					return;
-				}
-				
-				// Chose selected option.
-				story.ChooseChoiceIndex(selected[0]);
-				stories.next();
-				
-				// If successful disable remove this listener.
-				input.element.removeEventListener('received', this);
-			});
+			input.element.addEventListener('recognized', onRecognized);
 			return;
 		}
 	};
 	
+	let detect = function() {
+		// If darwin or linux enable hotword detection.
+		if ([ 'darwin', 'linux' ].indexOf(os.platform()) > -1) {
+			// Enable hotword detection.
+			input.detect();
+			input.element.addEventListener('hotword', onHotword);
+		}
+	}
+	
 	let convertTags = function(tags) {
 		let result = {};
 		for (let i = 0, tag, index, value; i < tags.length; i++) {
-			tag = tags[i];
+			tag = tags[i].toLowerCase();
 			index = tag.indexOf('_');
 			value = tag.substring(index + 1, tag.length);
 			// If value is a number convert it to such.
@@ -185,16 +144,20 @@ const stories = {};
 				index: choice.index
 			};
 			// Get hotword section.
-			indexFirst = choice.text.indexOf(' ') || choice.text.indexOf('[');
+			indexFirst = choice.text.indexOf(' ');
+			indexSecond = choice.text.indexOf('[');
+			if (indexSecond > -1 && indexFirst > indexSecond) {
+				indexFirst = indexSecond;
+			}
 			if (indexFirst > -1) {
-				resultTemp.char = choice.text.substring(0, indexFirst);
+				resultTemp.char = choice.text.substring(0, indexFirst).toLowerCase();
 			}
 			// Get section between brackets.
 			indexFirst = choice.text.indexOf('[');
 			indexSecond = choice.text.lastIndexOf(']');
 			if (indexFirst > -1 && indexSecond > -1) {
 				// Get string between brackets, split at comma, trim space away.
-				resultTemp.options = choice.text.substring(indexFirst + 1, indexSecond).split(',').map(function(phrase) {
+				resultTemp.options = choice.text.substring(indexFirst + 1, indexSecond).toLowerCase().split(',').map(function(phrase) {
 					return phrase.trim();
 				});
 			}
@@ -204,12 +167,81 @@ const stories = {};
 		return result;
 	};
 	
+	let onHotword = function(event) {
+		input.detect(false);
+		let hotword = event.detail.hotword;
+		let feedbackOptions = characters[hotword].confirmation;
+		output.speak(
+			feedbackOptions[helper.randomInt(feedbackOptions.length)],
+			characters[hotword].language,
+			null,
+			characters[hotword].pitch,
+			characters[hotword].speed + 0.2,
+			characters[hotword].volume,
+			);
+		input.record(event.detail.buffer, hotword);
+		input.element.removeEventListener('hotword', onHotword);
+	};
+	
+	let onRecognized = function(event) {
+		let hotword = event.detail.hotword,
+			transcript = event.detail.transcript;
+		console.log('hotword: ', hotword,'transcript: ', transcript);
+		
+		// Disect choices.
+		let choices = convertChoices(story.currentChoices);
+		console.log(choices);
+		
+		let similarity = [];
+		for (let i = 0, choice; i < choices.length; i++) {
+			choice = choices[i];
+			console.log('choice', choice);
+			// If hotword is not the same skip.
+			if (choice.char !== hotword) {
+				similarity.push(0);
+				continue;
+			}
+			
+			let ratings = stringSimilarity.findBestMatch(transcript, choice.options);
+			console.log('ratings: ', ratings);
+			similarity.push(ratings.bestMatch.rating);
+		}
+		// If no value is greater than zero, no matching hotword is found.
+		if (Math.max(similarity) === 0) {
+			choiceFail(hotword, 'addressing');
+			return;
+		}
+		// Get indeces of the highest value.
+		let selected = helper.indecesOfMax(similarity);
+		// If multiple options each as likely.
+		// Or if option is less than the threshold.
+		if (selected.length > 1 || similarity[selected[0]] < 0.1) {
+			console.log('selected:', selected, 'similarity: ', similarity);
+			choiceFail(hotword, 'selection');
+			return;
+		}
+		
+		// Chose selected option.
+		story.ChooseChoiceIndex(selected[0]);
+		stories.element.dispatchEvent(
+			new CustomEvent('selected', {
+				detail : {
+					index: selected[0],
+					transcript: story.Continue()
+				}})
+			);
+		stories.next();
+		
+		// If successful disable remove this listener.
+		input.element.removeEventListener('recognized', onRecognized);
+	};
+	
 	let choiceFail = function(hotword, type) {
 		let onSpeakEnded = function(event) {
 			// Remove self after done.
 			output.element.removeEventListener('ended_speak', onSpeakEnded);
 			// Re-enable detection.
-			input.detect();
+			detect();
 		}
 		output.element.addEventListener('ended_speak', onSpeakEnded);
 		

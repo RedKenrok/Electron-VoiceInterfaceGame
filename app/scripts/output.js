@@ -15,15 +15,15 @@ const output = {};
 		let urls = googleSynthesis.request(transcript, language, voice, speed, pitch, volume);
 		
 		// Audio player.
-		let audio = new Audio();
+		let audio = new Audio(urls[0]);
 		
 		// Setup listener so it cycles through playing each url.
 		let index = 0;
-		audio.addEventListener('ended', function() {
+		let onEnded = function() {
 			index++;
 			
 			if (index >= urls.length) {
-				audio.removeEventListener('ended', this);
+				audio.removeEventListener('ended', onEnded);
 				// Send ended event.
 				output.element.dispatchEvent(
 					new CustomEvent('ended_speak')
@@ -33,23 +33,40 @@ const output = {};
 			
 			audio.src = urls[index];
 			audio.play();
-		});
+		}
+		audio.addEventListener('ended', onEnded);
 		
-		// Set first source.
-		audio.src = urls[index];
+		// Play speech.
 		audio.play();
 	}
 	
 	output.effect = function(source, loop = false) {
-		// Audio player.
-		let audio = new Audio();
-		if (loop == true) {
-			audio.loop = true;
+		// If directory set the source to a random file in the directory.
+		if (fs.statSync(source).isDirectory()) {
+			const files = fs.readDirSync(source);
+			source = path.resolve(source, files[helper.randomInt(files.length)]);
 		}
+		// Audio player.
+		let audio = new Audio(source);
 		
-		// Todo: be able to stop loops! when speak event stops.
-		
-		audio.src = source;
+		// If looping.
+		if (loop) {
+			// Set random start time.
+			audio.addEventListener('loadedmetadata', function() {
+				this.currentTime = helper.randomInt(this.duration);
+				this.play();
+			});
+			// Before the end loop back.
+			audio.addEventListener('timeupdate', function() {
+				if (this.currentTime > this.duration - (1 + (helper.randomInt(10) / 100))) {
+					this.currentTime = helper.randomInt(10) / 100;
+				}
+			});
+			return audio;
+		}
+		// Else play.
 		audio.play();
+		
+		return audio;
 	}
 }());
