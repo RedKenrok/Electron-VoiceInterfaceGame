@@ -24,6 +24,10 @@ const stories = {};
 			// Start story when option clicked.
 			element.addEventListener('click', function(event) {
 				event.preventDefault();
+				output.selected = {
+					source: path.resolve(source, option),
+					name: name
+				}
 				// Remove stories list.
 				stories.element.style.display = 'none';
 				// Load characters.
@@ -93,7 +97,7 @@ const stories = {};
 						tags: tags
 					}})
 				);
-			output.speak(
+			speak(
 				transcript,
 				characters[tags.char].language,
 				null,
@@ -171,7 +175,7 @@ const stories = {};
 		input.detect(false);
 		let hotword = event.detail.hotword;
 		let feedbackOptions = characters[hotword].confirmation;
-		output.speak(
+		speak(
 			feedbackOptions[helper.randomInt(feedbackOptions.length)],
 			characters[hotword].language,
 			null,
@@ -187,6 +191,11 @@ const stories = {};
 		let hotword = event.detail.hotword,
 			transcript = event.detail.transcript;
 		console.log('hotword: ', hotword,'transcript: ', transcript);
+		
+		if (transcript === undefined || transcript === null) {
+			choiceFail(hotword, 'transcript');
+			return;
+		}
 		
 		// Disect choices.
 		let choices = convertChoices(story.currentChoices);
@@ -246,7 +255,7 @@ const stories = {};
 		output.element.addEventListener('ended_speak', onSpeakEnded);
 		
 		let feedbackOptions = characters[hotword].fail[type];
-		output.speak(
+		speak(
 			feedbackOptions[helper.randomInt(feedbackOptions.length)],
 			characters[hotword].language,
 			null,
@@ -254,5 +263,24 @@ const stories = {};
 			characters[hotword].speed,
 			characters[hotword].volume,
 			);
+	};
+	
+	let speak = function(transcript, language, voice, pitch, speed, volume) {
+		// Play prefix
+		if (characters.player.prefix) {
+			output.effect(path.resolve(output.selected.source, characters.player.prefix));
+		}
+		
+		// Play speech.
+		let audio = output.speak(transcript, language, null, pitch, speed, volume);
+		
+		// Play suffix on end.
+		if (characters.player.prefix) {
+			let suffix = function() {
+				output.effect(path.resolve(output.selected.source, characters.player.suffix));
+				audio.removeEventListener('ended', suffix);
+			};
+			audio.addEventListener('ended', suffix);
+		}
 	};
 }());

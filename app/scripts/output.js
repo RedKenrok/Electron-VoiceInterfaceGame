@@ -38,12 +38,15 @@ const output = {};
 		
 		// Play speech.
 		audio.play();
+		
+		// Return audio.
+		return audio;
 	}
 	
 	output.effect = function(source, loop = false) {
 		// If directory set the source to a random file in the directory.
 		if (fs.statSync(source).isDirectory()) {
-			const files = fs.readDirSync(source);
+			const files = fs.readdirSync(source);
 			source = path.resolve(source, files[helper.randomInt(files.length)]);
 		}
 		// Audio player.
@@ -58,7 +61,7 @@ const output = {};
 			});
 			// Before the end loop back.
 			audio.addEventListener('timeupdate', function() {
-				if (this.currentTime > this.duration - (1 + (helper.randomInt(10) / 100))) {
+				if (this.currentTime > this.duration - (0.5 + (helper.randomInt(10) / 100))) {
 					this.currentTime = helper.randomInt(10) / 100;
 				}
 			});
@@ -67,6 +70,7 @@ const output = {};
 		// Else play.
 		audio.play();
 		
+		// Return audio.
 		return audio;
 	}
 }());

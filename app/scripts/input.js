@@ -77,21 +77,37 @@ const input = {};
 			// Start web stream.
 			let stream = speech.streamingRecognize(speechRequest)
 				.on('error', console.error)
-				.on('data', function(data) {
+				.once('data', function(data) {
 					// Explicitly stop audio recorder.
 					audioRecorder.stop();
+					const detail = {
+						hotword: hotword
+					}
+					if (data.results[0].alternatives[0].transcript) {
+						detail.transcript = data.results[0].alternatives[0].transcript;
+					}
 					// Invoke recognized event.
-					input.element.dispatchEvent(
-						new CustomEvent('recognized', {
-							detail : {
-								hotword: hotword,
-								transcript: data.results[0].alternatives[0].transcript
-							}})
-						);
+					input.element.dispatchEvent(new CustomEvent('recognized', { detail: detail }));
 				});
 			// Start streaming audio to web stream.
-			audioRecorder.start().stream()
-				.pipe(stream);
+			audioRecorder.start().stream().pipe(stream);
+			
+			// Automaticly stop after recording when no data has bee received after the given interval.
+			let timemout = setTimeout(function() {
+				// Remove listeners to stream.
+				stream.removeAllListeners();
+				// Stop audio recorder.
+				audioRecorder.stop();
+				// Send event without transcript.
+				input.element.dispatchEvent(new CustomEvent('recognized', {
+					detail: {
+						hotword: hotword
+					}
+				}));
+			}, 5e3); // Five seconds.
+			audioRecorder.stream().once('data', function(data) {
+				clearTimeout(timemout);
+			});
 		};
 	}
 	// If no service configured display a warning message.
