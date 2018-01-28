@@ -4,6 +4,4 @@ package-lock.json
 
 # App
 app/keys/
-!app/keys/.gitinclude
 app/stories/
-!app/stories/.gitinclude
