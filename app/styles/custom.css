@@ -23,7 +23,9 @@ body {
 	/* Fade app in */
 	animation: fadein 1s;
 	
-	/* Styling */
+	/* Page styling */
+    overflow: hidden;
+	
 	font-family: "Courier New", Courier, monospace;
 	
 	background-color: var(--background);

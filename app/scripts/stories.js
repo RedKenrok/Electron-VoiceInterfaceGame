@@ -88,6 +88,12 @@ const stories = {};
 			let transcript = story.Continue();
 			let tags = convertTags(story.currentTags);
 			
+			if (transcript.trim() === '') {
+				// Go to next line if nothing has to be said.
+				stories.next();
+				return;
+			}
+			
 			let onSpeakEnded = function(event) {
 				// Remove self after done.
 				output.element.removeEventListener('ended_speak', onSpeakEnded);
@@ -99,6 +105,10 @@ const stories = {};
 			// Play effect during transcript.
 			if (tags.effect) {
 				playEffect(path.join('audio/effects', tags.effect));
+			}
+			
+			if (characters[tags.char] === undefined) {
+				console.error('No character tag given for ' + transcript);
 			}
 			
 			// Play prefix, suffix, and effect.
@@ -189,9 +199,15 @@ const stories = {};
 			// Get hotword section.
 			indexFirst = choice.text.indexOf(' ');
 			indexSecond = choice.text.indexOf('[');
-			if (indexSecond > -1 && indexFirst > indexSecond) {
-				indexFirst = indexSecond;
+			if (indexSecond > -1) {
+				if (indexFirst > -1) {
+					indexFirst = Math.min(indexFirst, indexSecond);
+				}
+				else {
+					indexFirst = indexSecond;
+				}
 			}
+			
 			if (indexFirst > -1) {
 				resultTemp.char = choice.text.substring(0, indexFirst).toLowerCase();
 			}
@@ -227,11 +243,7 @@ const stories = {};
 				}})
 			);
 		
-		let tags = story.currentTags;
-		console.log(tags);
-		console.log(JSON.stringify(convertTags(tags)));
-		if (!tags.nochar || (tags.nochar && ((typeof tags.nochar == 'string' && tags.nochar.toLowerCase() == hotword.toLowerCase()) || (typeof tags.nochar == 'array' && tags.nochar.indexOf(hotword) === -1)))) {
-			console.log('give feedback');
+		if (isCharacterAvailable(hotword)) {
 			// Give feedback about the hotword detection.
 			let feedback = characters[hotword].confirmation;
 			feedback = feedback[helper.randomInt(feedback.length)];
@@ -260,6 +272,7 @@ const stories = {};
 			);
 		
 		// Disect choices.
+		console.log(story.currentChoices);
 		let choices = convertChoices(story.currentChoices);
 		console.log(choices);
 		
@@ -269,6 +282,12 @@ const stories = {};
 			// If hotword is not the same skip.
 			if (choice.char !== hotword) {
 				similarityChoice.push(-1);
+				continue;
+			}
+			console.log(choice.options);
+			console.log(typeof choice.options);
+			if (choice.options.indexOf('*') > -1) {
+				similarityChoice.push(1);
 				continue;
 			}
 			
@@ -344,6 +363,18 @@ const stories = {};
 		let feedback = characters[hotword].fail[type];
 		let index = helper.randomInt(feedback.length);
 		speakLocal(feedback[index], path.join('audio', hotword, 'fail', type, index.toString() + '.mp3'), hotword);
+	};
+	
+	let isCharacterAvailable = function(char) {
+		let tags = convertTags(story.currentTags);
+		return (tags.nochar === undefined ||
+				(
+					(typeof tags.nochar == 'array' &&
+						tags.nochar.indexOf(char) < 0
+					) ||
+					tags.nochar !== char
+				)
+			);
 	};
 	
 	let speakLocal = function(transcript, source, char) {
