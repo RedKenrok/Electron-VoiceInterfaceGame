@@ -8,8 +8,8 @@
 }
 
 :root {
-	--color-black: #000;
-	--color-white: #fff;
+	--background: #000;
+	--font: #fff;
 }
 
 body {
@@ -26,8 +26,8 @@ body {
 	/* Styling */
 	font-family: "Courier New", Courier, monospace;
 	
-	background-color: var(--color-black);
-	color: var(--color-white);
+	background-color: var(--background);
+	color: var(--font);
 }
 
 .container {
@@ -40,6 +40,12 @@ ul {
 	padding: 0;
 	margin: 0;
 }
+ul > li {
+	margin-top: 1rem;
+}
+ul > li:first-child {
+	margin-top: 0;
+}
 
 ul#stories {
 	list-style-type: none;
@@ -50,12 +56,6 @@ ul#stories > li {
 
 ul#messenger {
 	list-style-type: none;
-}
-ul#messenger > li {
-	margin-top: 1rem;
-}
-ul#messenger > li:first-child {
-	margin-top: 0;
 }
 
 ul#messenger > li.other {
