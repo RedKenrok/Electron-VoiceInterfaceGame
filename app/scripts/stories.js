@@ -191,6 +191,7 @@ const stories = {};
 	};
 	
 	let onEndedRecording = function(event) {
+		console.log('Play mic end feedback.');
 		// Plays feedback sound when recognition ended.
 		output.effect(path.resolve(stories.selected.source, 'audio/effects', characters.player.feedback));
 	}
@@ -285,6 +286,7 @@ const stories = {};
 		
 		// Get indeces of the highest value.
 		let selected = helper.indecesOfMax(similarityChoice);
+		console.log('selected: ' + selected, 'value: ' + similarityChoice[selected[0]]);
 		// If multiple options each as likely.
 		// Or if options are less than the threshold.
 		if (selected.length > 1 || similarityChoice[selected[0]] < 0.4) {

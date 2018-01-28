@@ -22,6 +22,7 @@ const messenger = {};
 			// Create list item.
 			let element = document.createElement('li');
 			element.className = 'other';
+			element.style.display = 'none';
 			
 			// Character
 			if (event.detail.tags && event.detail.tags.char) {
@@ -38,6 +39,12 @@ const messenger = {};
 			element.appendChild(div);
 			
 			messenger.element.appendChild(element);
+			
+			scroll();
+		});
+		
+		output.element.addEventListener('ended_speak', function(event) {
+			messenger.element.lastChild.style.display = 'block';
 		});
 		
 		stories.element.addEventListener('player_speech', function(event) {
@@ -52,6 +59,12 @@ const messenger = {};
 			element.appendChild(div);
 			
 			messenger.element.appendChild(element);
+			
+			scroll();
 		});
 	});
+	
+	let scroll = function() {
+		window.scrollTo(0, document.body.scrollHeight);
+	}
 }());

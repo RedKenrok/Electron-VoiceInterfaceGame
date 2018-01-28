@@ -23,7 +23,49 @@ body {
 	/* Fade app in */
 	animation: fadein 1s;
 	
+	/* Styling */
+	font-family: "Courier New", Courier, monospace;
+	
 	background-color: var(--color-black);
 	color: var(--color-white);
-	font-family: monospace;
+}
+
+.container {
+	max-width: 32rem;
+	padding: 2rem 2rem;
+	margin: 0 auto;
+}
+
+ul {
+	padding: 0;
+	margin: 0;
+}
+
+ul#stories {
+	list-style-type: none;
+}
+ul#stories > li {
+	text-decoration: underline;
+}
+
+ul#messenger {
+	list-style-type: none;
+}
+ul#messenger > li {
+	margin-top: 1rem;
+}
+ul#messenger > li:first-child {
+	margin-top: 0;
+}
+
+ul#messenger > li.other {
+    text-align: justify;
+    text-justify: inter-word;
+}
+ul#messenger > li.other > .char {
+	font-weight: bold;
+}
+
+ul#messenger > li.self {
+	text-align: right;
 }
