@@ -3,5 +3,7 @@ node_modules/
 package-lock.json
 
 # App
-app/data/snowboy/
 app/keys/
+!app/keys/.gitinclude
+app/stories/
+!app/stories/.gitinclude
