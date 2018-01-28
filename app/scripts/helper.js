@@ -16,13 +16,14 @@ const helper = {};
 		}
 		
 		let maxIndeces = [ 0 ],
-			maxValue;
+			maxValue = array[0];
 		for (let i = 1; i < array.length; i++) {
 			if (array[i] == maxValue) {
 				maxIndeces.push(i);
 			}
 			else if (array[i] > maxValue) {
-				indexOfMax = [ i ];
+				maxIndeces = [ i ];
+				maxValue = array[i];
 			}
 		}
 		

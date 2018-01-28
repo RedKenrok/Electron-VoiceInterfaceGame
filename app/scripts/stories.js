@@ -54,7 +54,7 @@ const stories = {};
 				else {
 					input.initialize(characters);
 				}
-				input.element.addEventListener('ended_recording', onEndedRecording);
+				//input.element.addEventListener('ended_recording', onEndedRecording);
 				
 				// Load ink file.
 				fs.readFile(path.resolve(stories.selected.source, 'story.ink.json'), 'UTF-8', function(error, data) {
@@ -150,10 +150,30 @@ const stories = {};
 		let result = {};
 		for (let i = 0, tag, index, value; i < tags.length; i++) {
 			tag = tags[i].toLowerCase();
+			// Get index of first split point.
 			index = tag.indexOf('_');
+			// Get value after _.
 			value = tag.substring(index + 1, tag.length);
 			// If value is a number convert it to such.
-			result[tag.substring(0, index)] = isNaN(value) ? value : parseFloat(value);
+			value = isNaN(value) ? value : parseFloat(value);
+			// Index becomes property name.
+			index = tag.substring(0, index);
+			// If result already has property turn it into a name.
+			if (result.hasOwnProperty(index)) {
+				// If it is already an array of tags just push this value to it.
+				if (typeof result[index] == 'array') {
+					result[index].push(value);
+					continue;
+				}
+				// Otherwise make it an array with both value in it.
+				result[index] = [
+					result[index],
+					value
+				]
+				continue;
+			}
+			// Otherwise just set it.
+			result[index] = value;
 		}
 		return result;
 	};
@@ -190,11 +210,12 @@ const stories = {};
 		return result;
 	};
 	
+	/*
 	let onEndedRecording = function(event) {
 		console.log('Play mic end feedback.');
 		// Plays feedback sound when recognition ended.
 		output.effect(path.resolve(stories.selected.source, 'audio/effects', characters.player.feedback));
-	}
+	}*/
 	
 	let onHotword = function(event) {
 		input.detect(false);
@@ -206,10 +227,16 @@ const stories = {};
 				}})
 			);
 		
-		// Give feedback about the hotword detection.
-		let feedback = characters[hotword].confirmation;
-		feedback = feedback[helper.randomInt(feedback.length)];
-		speakLocal(feedback, path.join('audio', hotword, 'confirmation', helper.replaceAll(feedback.toLowerCase(), ' ', '_') + '.mp3'), hotword);
+		let tags = story.currentTags;
+		console.log(tags);
+		console.log(JSON.stringify(convertTags(tags)));
+		if (!tags.nochar || (tags.nochar && ((typeof tags.nochar == 'string' && tags.nochar.toLowerCase() == hotword.toLowerCase()) || (typeof tags.nochar == 'array' && tags.nochar.indexOf(hotword) === -1)))) {
+			console.log('give feedback');
+			// Give feedback about the hotword detection.
+			let feedback = characters[hotword].confirmation;
+			feedback = feedback[helper.randomInt(feedback.length)];
+			speakLocal(feedback, path.join('audio', hotword, 'confirmation', helper.replaceAll(feedback.toLowerCase(), ' ', '_') + '.mp3'), hotword);
+		}
 		
 		input.record(event.detail.buffer, hotword);
 		input.element.removeEventListener('hotword', onHotword);
@@ -245,36 +272,34 @@ const stories = {};
 				continue;
 			}
 			
-			if (false) {
-				let similarityOption = [];
-				// For each option of a choice.
-				for (let j = 0, option, similarity, delta; j < choice.options.length; j++) {
-					option = choice.options[j];
-					// Calculate similarity of the option.
-					similarity = stringSimilarity.compareTwoStrings(transcript, option);
-					if (similarity === 1 || similarity === 0) {
-						similarityOption.push(similarity);
-						continue;
-					}
-					// If they are the same length no compensastion is required.
-					delta = Math.abs(transcript.length - option.length);
-					if (delta === 0) {
-						similarityOption.push(similarity);
-						continue;
-					}
-					
-					let alpha = delta / transcript.length;
-					let beta = 1 / alpha;
-					let similarityComp = beta * similarity;
-					similarityOption.push(similarityComp);
+			/*
+			let similarityOption = [];
+			// For each option of a choice.
+			for (let j = 0, option, similarity, delta; j < choice.options.length; j++) {
+				option = choice.options[j];
+				// Calculate similarity of the option.
+				similarity = stringSimilarity.compareTwoStrings(transcript, option);
+				if (similarity === 1 || similarity === 0) {
+					similarityOption.push(similarity);
+					continue;
 				}
-				console.log('similarityOption:', similarityOption);
-				// Push best rated option to choices.
-				similarityChoice.push(helper.max(similarityOption));
+				// If they are the same length no compensastion is required.
+				delta = Math.abs(transcript.length - option.length);
+				if (delta === 0) {
+					similarityOption.push(similarity);
+					continue;
+				}
+				
+				let alpha = delta / transcript.length;
+				let beta = 1 / alpha;
+				let similarityComp = beta * similarity;
+				similarityOption.push(similarityComp);
 			}
-			else {
-				similarityChoice.push(stringSimilarity.findBestMatch(transcript, choice.options).bestMatch.rating);
-			}
+			console.log('similarityOption:', similarityOption);
+			// Push best rated option to choices.
+			similarityChoice.push(helper.max(similarityOption));
+			*/
+			similarityChoice.push(stringSimilarity.findBestMatch(transcript, choice.options).bestMatch.rating);
 		}
 		console.log('similarityChoice:', similarityChoice);
 		

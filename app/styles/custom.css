@@ -64,6 +64,8 @@ ul#messenger {
 ul#messenger > li.other {
     text-align: justify;
     text-justify: inter-word;
+	
+	animation: fadein 1s;
 }
 ul#messenger > li.other > .char {
 	font-weight: bold;
@@ -71,4 +73,6 @@ ul#messenger > li.other > .char {
 
 ul#messenger > li.self {
 	text-align: right;
+	
+	animation: fadein 1s;
 }

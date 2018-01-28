@@ -39,12 +39,6 @@ const messenger = {};
 			element.appendChild(div);
 			
 			messenger.element.appendChild(element);
-			
-			scroll();
-		});
-		
-		output.element.addEventListener('ended_speak', function(event) {
-			messenger.element.lastChild.style.display = 'block';
 		});
 		
 		stories.element.addEventListener('player_speech', function(event) {
@@ -62,6 +56,12 @@ const messenger = {};
 			
 			scroll();
 		});
+	});
+		
+	output.element.addEventListener('ended_speak', function(event) {
+		messenger.element.lastChild.style.display = 'block';
+		
+		scroll();
 	});
 	
 	let scroll = function() {

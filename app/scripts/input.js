@@ -46,7 +46,7 @@ const input = {};
 	let audioRecorder = new AudioRecorder({
 		program: [ 'win32' ].indexOf(os.platform()) > -1 ? 'sox' : 'rec', // Use sox on windows else use rec.
 		silence: 1.5,
-		threshold: 0.25
+		threshold: 0.35
 	});
 	audioRecorder.on('close', function(exitCode) {
 		audioRecorder.stop();
