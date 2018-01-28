@@ -53,6 +53,9 @@ ul#stories {
 ul#stories > li {
 	text-decoration: underline;
 }
+ul#stories > li:hover {
+	cursor: pointer;
+}
 
 ul#messenger {
 	list-style-type: none;
