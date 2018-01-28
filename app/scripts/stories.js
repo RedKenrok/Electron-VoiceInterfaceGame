@@ -23,18 +23,26 @@ const stories = {};
 			stories.element.appendChild(element);
 			// Start story when option clicked.
 			element.addEventListener('click', function(event) {
+				// Prevent default click behaviour.
 				event.preventDefault();
+				
+				// Store the selected information.
 				stories.selected = {
 					source: path.resolve(source, option),
-					name: name
+					name: option
 				}
-				// Remove stories list.
-				stories.element.style.display = 'none';
 				
+				// Change the title of the page.
+				document.title = option;
+				
+				// Send out selection event.
 				stories.element.dispatchEvent(
 					new CustomEvent('selected', {
 						detail: stories.selected
 					}));
+				
+				// Remove stories list.
+				stories.element.style.display = 'none';
 				
 				// Load characters.
 				characters = JSON.parse(fs.readFileSync(path.resolve(stories.selected.source, 'characters.json'), 'UTF-8'));
@@ -272,7 +280,6 @@ const stories = {};
 			);
 		
 		// Disect choices.
-		console.log(story.currentChoices);
 		let choices = convertChoices(story.currentChoices);
 		console.log(choices);
 		
@@ -284,8 +291,6 @@ const stories = {};
 				similarityChoice.push(-1);
 				continue;
 			}
-			console.log(choice.options);
-			console.log(typeof choice.options);
 			if (choice.options.indexOf('*') > -1) {
 				similarityChoice.push(1);
 				continue;
@@ -350,6 +355,12 @@ const stories = {};
 	let choiceFail = function(hotword, type) {
 		// Warn about the failure.
 		console.warn('Choice failed.', 'hotword: ' + hotword, 'type: ' + type);
+		
+		if (!isCharacterAvailable(hotword)) {
+			// Re-enable detection.
+			detect();
+			return;
+		}
 		
 		let onSpeakEnded = function(event) {
 			// Remove self after done.

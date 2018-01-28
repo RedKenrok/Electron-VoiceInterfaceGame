@@ -95,7 +95,7 @@ const input = {};
 					const detail = {
 						hotword: hotword
 					}
-					if (data.results[0].alternatives[0].transcript) {
+					if (data.results && data.results.length > 0 && data.results[0].alternatives && data.results[0].alternatives.length > 0) {
 						detail.transcript = data.results[0].alternatives[0].transcript;
 					}
 					// Invoke recognized event.
