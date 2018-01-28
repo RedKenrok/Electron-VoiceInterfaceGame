@@ -18,10 +18,8 @@ const output = {};
 		let audio = new Audio(urls[0]);
 		
 		// Setup listener so it cycles through playing each url.
-		let index = 0;
+		let index = 1;
 		let onEnded = function() {
-			index++;
-			
 			if (index >= urls.length) {
 				audio.removeEventListener('ended', onEnded);
 				// Send ended event.
@@ -33,7 +31,29 @@ const output = {};
 			
 			audio.src = urls[index];
 			audio.play();
+			
+			index++;
 		}
+		audio.addEventListener('ended', onEnded);
+		
+		// Play speech.
+		audio.play();
+		
+		// Return audio.
+		return audio;
+	}
+	
+	output.speakLocal = function(source) {
+		// Audio player.
+		let audio = new Audio(source);
+		
+		let onEnded = function() {
+			audio.removeEventListener('ended', onEnded);
+			// Send ended event.
+			output.element.dispatchEvent(
+				new CustomEvent('ended_speak')
+				);
+		};
 		audio.addEventListener('ended', onEnded);
 		
 		// Play speech.

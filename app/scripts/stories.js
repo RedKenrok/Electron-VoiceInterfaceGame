@@ -24,32 +24,40 @@ const stories = {};
 			// Start story when option clicked.
 			element.addEventListener('click', function(event) {
 				event.preventDefault();
-				output.selected = {
+				stories.selected = {
 					source: path.resolve(source, option),
 					name: name
 				}
 				// Remove stories list.
 				stories.element.style.display = 'none';
+				
+				stories.element.dispatchEvent(
+					new CustomEvent('selected', {
+						detail: stories.selected
+					}));
+				
 				// Load characters.
-				characters = JSON.parse(fs.readFileSync(path.resolve(source, option, 'characters.json'), 'UTF-8'));
+				characters = JSON.parse(fs.readFileSync(path.resolve(stories.selected.source, 'characters.json'), 'UTF-8'));
 				// Apply player effects.
 				if (characters.player.effect) {
-					output.effect(path.resolve(source, option, characters.player.effect), true);
+					output.effect(path.resolve(stories.selected.source, 'audio/effects', characters.player.effect), true);
 				}
 				// Initialize option triggers.
-				if (fs.existsSync(path.resolve(source, option, 'hotworddetector.json'))) {
-					let hotwordConfiguration = JSON.parse(fs.readFileSync(path.resolve(source, option, 'hotworddetector.json'), 'UTF-8'));
+				if (fs.existsSync(path.resolve(stories.selected.source, 'hotworddetector.json'))) {
+					let hotwordConfiguration = JSON.parse(fs.readFileSync(path.resolve(stories.selected.source, 'hotworddetector.json'), 'UTF-8'));
 					for (let i = 0, model; i < hotwordConfiguration.models.length; i++) {
 						model = hotwordConfiguration.models[i];
-						model.file = path.resolve(source, option, model.file);
+						model.file = path.resolve(stories.selected.source, model.file);
 					}
 					input.initialize(characters, hotwordConfiguration);
 				}
 				else {
 					input.initialize(characters);
 				}
+				input.element.addEventListener('ended_recording', onEndedRecording);
+				
 				// Load ink file.
-				fs.readFile(path.resolve(source, option, 'story.ink.json'), 'UTF-8', function(error, data) {
+				fs.readFile(path.resolve(stories.selected.source, 'story.ink.json'), 'UTF-8', function(error, data) {
 					data = data.replace(/^\uFEFF/, '');
 					story = new Story(data);
 					// Start story.
@@ -79,8 +87,6 @@ const stories = {};
 		if (story.canContinue) {
 			let transcript = story.Continue();
 			let tags = convertTags(story.currentTags);
-			console.log(transcript);
-			console.log(tags);
 			
 			let onSpeakEnded = function(event) {
 				// Remove self after done.
@@ -90,20 +96,33 @@ const stories = {};
 			}
 			output.element.addEventListener('ended_speak', onSpeakEnded);
 			
+			// Play effect during transcript.
+			if (tags.effect) {
+				playEffect(path.join('audio/effects', tags.effect));
+			}
+			
+			// Play prefix, suffix, and effect.
+			playPrefix();
+			playSuffix();
+			if (characters[tags.char].effect) {
+				playEffect(path.join('audio/effects', characters[tags.char].effect));
+			}
+			// Voice the transcript.
+			output.speak(
+				transcript,
+				characters[tags.char].language,
+				null,
+				(tags.pitch !== undefined) ? characters[tags.char].pitch + tags.pitch : characters[tags.char].pitch,
+				(tags.speed !== undefined) ? characters[tags.char].speed + tags.speed : characters[tags.char].speed,
+				(tags.volume !== undefined) ? characters[tags.char].volume + tags.volume : characters[tags.char].volume
+				);
+			// Dispatch speak event.
 			stories.element.dispatchEvent(
-				new CustomEvent('speak', {
+				new CustomEvent('game_speech', {
 					detail : {
 						transcript: transcript,
 						tags: tags
 					}})
-				);
-			speak(
-				transcript,
-				characters[tags.char].language,
-				null,
-				tags.pitch || characters[tags.char].pitch,
-				tags.speed || characters[tags.char].speed,
-				tags.volume || characters[tags.char].volume,
 				);
 			return;
 		}
@@ -171,18 +190,26 @@ const stories = {};
 		return result;
 	};
 	
+	let onEndedRecording = function(event) {
+		// Plays feedback sound when recognition ended.
+		output.effect(path.resolve(stories.selected.source, 'audio/effects', characters.player.feedback));
+	}
+	
 	let onHotword = function(event) {
 		input.detect(false);
 		let hotword = event.detail.hotword;
-		let feedbackOptions = characters[hotword].confirmation;
-		speak(
-			feedbackOptions[helper.randomInt(feedbackOptions.length)],
-			characters[hotword].language,
-			null,
-			characters[hotword].pitch,
-			characters[hotword].speed + 0.2,
-			characters[hotword].volume,
+		stories.element.dispatchEvent(
+			new CustomEvent('player_speech', {
+				detail : {
+					transcript: hotword
+				}})
 			);
+		
+		// Give feedback about the hotword detection.
+		let feedback = characters[hotword].confirmation;
+		feedback = feedback[helper.randomInt(feedback.length)];
+		speakLocal(feedback, path.join('audio', hotword, 'confirmation', helper.replaceAll(feedback.toLowerCase(), ' ', '_') + '.mp3'), hotword);
+		
 		input.record(event.detail.buffer, hotword);
 		input.element.removeEventListener('hotword', onHotword);
 	};
@@ -196,6 +223,13 @@ const stories = {};
 			choiceFail(hotword, 'transcript');
 			return;
 		}
+		
+		stories.element.dispatchEvent(
+			new CustomEvent('player_speech', {
+				detail : {
+					transcript: transcript
+				}})
+			);
 		
 		// Disect choices.
 		let choices = convertChoices(story.currentChoices);
@@ -253,20 +287,14 @@ const stories = {};
 		let selected = helper.indecesOfMax(similarityChoice);
 		// If multiple options each as likely.
 		// Or if options are less than the threshold.
-		if (selected.length > 1 || similarityChoice[selected[0]] < 0.2) {
+		if (selected.length > 1 || similarityChoice[selected[0]] < 0.4) {
 			choiceFail(hotword, 'threshold');
 			return;
 		}
 		
 		// Chose selected option.
 		story.ChooseChoiceIndex(selected[0]);
-		stories.element.dispatchEvent(
-			new CustomEvent('selected', {
-				detail : {
-					index: selected[0],
-					transcript: story.Continue()
-				}})
-			);
+		story.Continue();
 		stories.next();
 		
 		// If successful disable remove this listener.
@@ -285,33 +313,59 @@ const stories = {};
 		}
 		output.element.addEventListener('ended_speak', onSpeakEnded);
 		
-		let feedbackOptions = characters[hotword].fail[type];
-		speak(
-			feedbackOptions[helper.randomInt(feedbackOptions.length)],
-			characters[hotword].language,
-			null,
-			characters[hotword].pitch,
-			characters[hotword].speed,
-			characters[hotword].volume,
-			);
+		// Give feedback of failure.
+		let feedback = characters[hotword].fail[type];
+		let index = helper.randomInt(feedback.length);
+		speakLocal(feedback[index], path.join('audio', hotword, 'fail', type, index.toString() + '.mp3'), hotword);
 	};
 	
-	let speak = function(transcript, language, voice, pitch, speed, volume) {
+	let speakLocal = function(transcript, source, char) {
+		// Play prefix, suffix, and effect.
+		playPrefix();
+		playSuffix();
+		if (characters[char].effect) {
+			playEffect(path.join('audio/effects', characters[char].effect));
+		}
+		// Play speech from local storage.
+		output.speakLocal(path.resolve(stories.selected.source, source));
+
+		// Dispatch event that the game has spoken.
+		stories.element.dispatchEvent(
+			new CustomEvent('game_speech', {
+				detail : {
+					tags: {
+						char: char
+					},
+					transcript: transcript
+				}})
+			);
+	}
+	
+	let playPrefix = function() {
 		// Play prefix
 		if (characters.player.prefix) {
-			output.effect(path.resolve(output.selected.source, characters.player.prefix));
+			output.effect(path.resolve(stories.selected.source, 'audio/effects', characters.player.prefix));
 		}
-		
-		// Play speech.
-		let audio = output.speak(transcript, language, null, pitch, speed, volume);
-		
+	};
+	
+	let playSuffix = function() {
 		// Play suffix on end.
-		if (characters.player.prefix) {
-			let suffix = function() {
-				output.effect(path.resolve(output.selected.source, characters.player.suffix));
-				audio.removeEventListener('ended', suffix);
+		if (characters.player.suffix) {
+			let onEnded = function() {
+				output.effect(path.resolve(stories.selected.source, 'audio/effects', characters.player.suffix));
+				output.element.removeEventListener('ended', onEnded);
 			};
-			audio.addEventListener('ended', suffix);
+			output.element.addEventListener('ended', onEnded);
 		}
+	};
+	
+	let playEffect = function(source) {
+		// Play effect for communication duration.
+		let audioEffect = output.effect(path.resolve(stories.selected.source, source));
+		let onEnded = function() {
+			audioEffect.pause();
+			output.element.removeEventListener('ended_speak', onEnded);
+		};
+		output.element.addEventListener('ended_speak', onEnded);
 	};
 }());

@@ -22,4 +22,8 @@ body {
 	
 	/* Fade app in */
 	animation: fadein 1s;
+	
+	background-color: var(--color-black);
+	color: var(--color-white);
+	font-family: monospace;
 }

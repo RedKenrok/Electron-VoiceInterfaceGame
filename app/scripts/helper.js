@@ -8,7 +8,7 @@ const helper = {};
 		return fs.readdirSync(directory).filter(function (file) {
 			return fs.statSync(path.resolve(directory, file)).isDirectory();
 		});
-	}
+	};
 	
 	helper.indecesOfMax = function(array) {
 		if (array.length === 0) {
@@ -27,7 +27,7 @@ const helper = {};
 		}
 		
 		return maxIndeces;
-	}
+	};
 	
 	helper.max = function(array) {
 		if (array.length === 0) {
@@ -42,9 +42,17 @@ const helper = {};
 		}
 		
 		return max;
-	}
+	};
 	
 	helper.randomInt = function(max) {
 		return Math.floor(Math.random() * Math.floor(max));
-	}
+	};
+	
+	helper.capitalizeFirstLetter = function(string) {
+		return string.charAt(0).toUpperCase() + string.slice(1);
+	};
+	
+	helper.replaceAll = function(string, search, replacement) {
+		return string.replace(new RegExp(search, 'g'), replacement);
+	};
 }());

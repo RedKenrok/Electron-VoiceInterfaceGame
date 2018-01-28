@@ -84,8 +84,14 @@ const input = {};
 				.once('data', function(data) {
 					// Explicitly stop audio recorder.
 					audioRecorder.stop();
-					clearTimeout(timemoutSilence);
-					clearTimeout(timeoutMax);
+					
+					// Clear out timers.
+					if (timemoutSilence) {
+						clearTimeout(timemoutSilence);
+					}
+					if (timeoutMax) {
+						clearTimeout(timeoutMax);
+					}
 					const detail = {
 						hotword: hotword
 					}
@@ -97,6 +103,10 @@ const input = {};
 				});
 			// Start streaming audio to web stream.
 			audioRecorder.start().stream().pipe(stream);
+			audioRecorder.stream().once('close', function() {
+				// Send recording stopeed event.
+				input.element.dispatchEvent(new CustomEvent('ended_recording'));
+			});
 			
 			// Automaticly stop after recording when no data has bee received after the given interval.
 			timemoutSilence = setTimeout(function() {
@@ -125,7 +135,7 @@ const input = {};
 						hotword: hotword
 					}
 				}));
-			}, 60e3);
+			}, 50e3); // Fifty seconds.
 		};
 	}
 	// If no service configured display a warning message.
